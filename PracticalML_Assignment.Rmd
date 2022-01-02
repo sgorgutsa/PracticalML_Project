@@ -1,0 +1,92 @@
+---
+title: "Prediction Assignment (Coursera / Practical Machine Learning)"
+author: "S. Gorgutsa"
+date: "1/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive summary
+The goal of this assignment is to predict which exercise was performed using the Weight Lifting Exercise Dataset [link] (http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har). This dataset contais data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+The training data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+## Configuring Environment and Loading Data
+```{r message=FALSE}
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(gbm)
+
+```
+```{r}
+training_data_raw <- read.csv("pml-training.csv")
+test_data_raw <- read.csv("pml-testing.csv")
+
+```
+
+## Exploratory Data analysis and cleaning
+Preview data
+```{r}
+dim(training_data_raw)
+dim(test_data_raw)
+```
+Thus we have 159 variables for 19622 samples in training set and 20 samples in test set.
+However, if we would look on the data (output suppressed due to its excessive length) 
+```{r include = FALSE}
+head(test_data_raw)[,1:15]
+```
+we would see that: 
+a. The first 7 non-numerical variables are not useful for our analysis / prediction model. b. There are a lot of NA values
+
+### 
+```{r}
+## Remove non-numerical variables
+
+training_data <- training_data_raw[,8:ncol(training_data_raw)]
+test_data <- test_data_raw[,8:ncol(test_data_raw)]
+
+### Remove variables with NA values, 95% threshold.
+na_col <- sapply(training_data, function(x) mean(is.na(x))) > 0.95
+
+training_data <- training_data[,na_col == FALSE]
+test_data <- test_data[,na_col == FALSE]
+
+dim(training_data)
+dim(test_data)
+```
+
+Additionally, we can check if there are some variables in training set with nearly zero variance and exclude them from training and test sets as well. 
+
+```{r}
+zero_var <- nearZeroVar(training_data)
+
+training_data_nzv <- training_data[,-zero_var]
+test_data_nzv <- test_data[,-zero_var]
+
+dim(training_data_nzv)
+dim(test_data_nzv)
+```
+
+We can also check if the training data has the “classe” variable in it and the testing data has “problem_id” variable in it. As it will be needed for prediction part. 
+
+```{r}
+## last column in the training dataset
+colnames(training_data_clean)[ncol(training_data_clean)]
+## last column in the test dataset
+colnames(test_data_clean)[ncol(test_data_clean)]
+```
+
+
+## Prediction Model Seleciton
+
+## Conclusion

@@ -1,1 +1,1 @@
-# PracticalML_Project
+This repository relates to the peer-review part of the assignment of the Coursera - Practical Machine Learning course. 
