@@ -24,6 +24,8 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 ```{r message=FALSE}
 library(caret)
 library(ggplot2)
+library(rpart)
+library(rpart.plot)
 library(randomForest)
 library(gbm)
 
@@ -81,12 +83,81 @@ We can also check if the training data has the “classe” variable in it and t
 
 ```{r}
 ## last column in the training dataset
-colnames(training_data_clean)[ncol(training_data_clean)]
+colnames(training_data_nzv)[ncol(training_data_nzv)]
 ## last column in the test dataset
-colnames(test_data_clean)[ncol(test_data_clean)]
+colnames(test_data_nzv)[ncol(test_data_nzv)]
 ```
 
+## Data partition 
+Let us divide the available training dataset into two different parts using 60 /40 ratio. With one part (60% of the avaialbe data) being actual training set for the prediction model and 40% being the test set. 
 
+```{r}
+partition <- createDataPartition(training_data_nzv$classe, p=0.6, list=FALSE)
+training <- training_data_nzv[partition,]
+test <- training_data_nzv[-partition,]
+
+dim(training)
+```
 ## Prediction Model Seleciton
+We can now test several most popular prediction models and see which one provides the highest accuracy. Namely we will test the Decision Tree, Random Forest and Gradient Boosting models.
+
+### Decision Tree
+```{r}
+# Training
+tree <- train(classe ~ ., data = training, method="rpart")
+
+# Prediction
+tree_prediction <- predict(tree, test)
+confusionMatrix(tree_prediction, as.factor(test$classe))
+
+```
+
+Thus the accuracy of the Decision Tree model is around 49%.
+
+### Random Forest 
+
+```{r}
+# Training
+forest <- train(classe ~ ., data = training, method = "rf", ntree = 50)
+
+# Prediction
+forest_prediction <- predict(forest, test)
+confusionMatrix(forest_prediction, as.factor(test$classe))
+```
+Thus the accuracy of the Random Forest model is 98.9%
+
+### Gradient Boosting
+
+```{r}
+# Training
+gradient <- train(classe ~ ., data = training, method = "gbm", verbose = FALSE)
+gradient$finalModel
+```
+
+```{r}
+# Prediction
+gradient_prediction <- predict(gradient, test)
+confusionMatrix(gradient_prediction, as.factor(test$classe))
+```
+
+Thus the accuracy of the Gradient Boosting model is 96.3%
 
 ## Conclusion
+
+Overall, the Random Forest and Gradient Boosting models have demonstrated the highest accuracy. If to compare their overall performance the Random Forest looks to be a more accurate one. 
+
+```{r}
+# Overall statistics for Random Forest Model
+confusionMatrix(forest_prediction, as.factor(test$classe))$overall
+```
+```{r}
+# Overall statistics for Gradient Boosting Model
+confusionMatrix(gradient_prediction, as.factor(test$classe))$overall
+```
+
+## Applying Final model to original Test dataset
+```{r}
+Final_prediction <- predict(forest, test_data_nzv )
+Final_prediction
+```
+
